@@ -239,7 +239,8 @@ fun TestScreen(
                             result = result,
                             onApply = { viewModel.applyCommand(result.command) },
                             onCopy = { viewModel.copyCommand(result.command) },
-                            onMore = { viewModel.showCommandSheet = result.command }
+                            onMore = { viewModel.showCommandSheet = result.command },
+                            onSave = { viewModel.saveProfile(result.command, "") }
                         )
                     }
                 }
@@ -269,6 +270,14 @@ fun TestScreen(
                             icon = Icons.Default.ContentCopy,
                             onClick = {
                                 viewModel.copyCommand(command)
+                                viewModel.showCommandSheet = null
+                            }
+                        )
+                        TvDialogButton(
+                            text = stringResource(R.string.profiles_add),
+                            icon = Icons.Default.Add,
+                            onClick = {
+                                viewModel.saveProfile(command, "")
                                 viewModel.showCommandSheet = null
                             }
                         )
@@ -322,6 +331,20 @@ fun TestScreen(
                             leadingContent = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
                         )
                     }
+                    Surface(
+                        onClick = {
+                            viewModel.saveProfile(command, "")
+                            viewModel.showCommandSheet = null
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.profiles_add)) },
+                            leadingContent = { Icon(Icons.Default.Add, contentDescription = null) }
+                        )
+                    }
                 }
             }
         }
@@ -364,7 +387,8 @@ fun TestResultCard(
     result: TestResult,
     onApply: () -> Unit,
     onCopy: () -> Unit,
-    onMore: () -> Unit
+    onMore: () -> Unit,
+    onSave: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(16.dp)
@@ -484,13 +508,13 @@ fun TestResultCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Button(
-                            onClick = onCopy,
+                            onClick = onSave,
                             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                stringResource(R.string.cmd_history_copy)
+                                stringResource(R.string.add)
                             )
                         }
                         Spacer(modifier = Modifier.size(8.dp))

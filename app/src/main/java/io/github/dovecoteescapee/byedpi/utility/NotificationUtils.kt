@@ -38,12 +38,21 @@ fun createConnectionNotification(
     @StringRes title: Int,
     @StringRes content: Int,
     service: Class<*>,
-): Notification =
-    NotificationCompat.Builder(context, channelId)
+    profileName: String? = null
+): Notification {
+    val builder = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(R.drawable.ic_notification)
         .setSilent(true)
         .setContentTitle(context.getString(title))
-        .setContentText(context.getString(content))
+
+    if (!profileName.isNullOrBlank()) {
+        builder.setContentText(profileName)
+        builder.setSubText(context.getString(content))
+    } else {
+        builder.setContentText(context.getString(content))
+    }
+
+    return builder
         .addAction(0, context.getString(R.string.service_pause_btn),
             PendingIntent.getService(
                 context,
@@ -69,6 +78,7 @@ fun createConnectionNotification(
             )
         )
         .build()
+}
 
 fun createPauseNotification(
     context: Context,

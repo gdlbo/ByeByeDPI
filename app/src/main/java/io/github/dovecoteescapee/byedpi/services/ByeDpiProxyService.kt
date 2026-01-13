@@ -223,14 +223,19 @@ class ByeDpiProxyService : LifecycleService() {
         sendBroadcast(intent)
     }
 
-    private fun createNotification(): Notification =
-        createConnectionNotification(
+    private fun createNotification(): Notification {
+        val prefs = AppPreferences(getPreferences())
+        val profileName = prefs.getProfileName(prefs.cmdArgs)
+
+        return createConnectionNotification(
             this,
             NOTIFICATION_CHANNEL_ID,
             R.string.notification_title,
             R.string.proxy_notification_content,
             ByeDpiProxyService::class.java,
+            profileName
         )
+    }
 
     private fun createNotificationPause() {
         val notification = createPauseNotification(

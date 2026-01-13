@@ -37,6 +37,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var isCmdEnabled by mutableStateOf(appPrefs.cmdEnable)
         private set
 
+    var currentProfileName by mutableStateOf(appPrefs.getProfileName(appPrefs.cmdArgs))
+        private set
+
     val proxyAddress: Pair<String, String>
         get() = prefs.getProxyIpAndPort()
 
@@ -47,6 +50,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (key) {
             "byedpi_mode" -> preferredMode = appPrefs.mode
             "byedpi_enable_cmd_settings" -> isCmdEnabled = appPrefs.cmdEnable
+            "byedpi_cmd_args" -> currentProfileName = appPrefs.getProfileName(appPrefs.cmdArgs)
         }
     }
 

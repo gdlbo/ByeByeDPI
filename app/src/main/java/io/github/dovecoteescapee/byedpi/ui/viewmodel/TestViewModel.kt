@@ -110,7 +110,7 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
             val fullLog = prefs.getBoolean("byedpi_proxytest_fulllog", false)
             val logClickable = prefs.getBoolean("byedpi_proxytest_logclickable", false)
             val autoSort = prefs.getBoolean("byedpi_proxytest_autosort", true)
-            val delaySec = prefs.getIntStringNotNull("byedpi_proxytest_delay", 1)
+            val delaySec = prefs.getIntStringNotNull("byedpi_proxytest_delay", 6)
             val requestsCount = prefs.getIntStringNotNull("byedpi_proxytest_requests", 1)
             val requestTimeout = prefs.getLongStringNotNull("byedpi_proxytest_timeout", 5)
 
@@ -158,7 +158,7 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 val successfulCount = checkResults.sumOf { it.second }
-                val successPercentage = (successfulCount * 100) / totalRequests
+                val successPercentage = if (totalRequests > 0) (successfulCount * 100) / totalRequests else 0
                 val siteResults = checkResults.map { SiteResult(it.first, it.second, requestsCount) }
 
                 withContext(Dispatchers.Main) {
@@ -217,6 +217,15 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
         clipboard.setPrimaryClip(ClipData.newPlainText("command", command))
     }
 
+    fun saveProfile(command: String, name: String) {
+        val historyUtils = HistoryUtils(getApplication())
+        historyUtils.addCommand(command)
+        historyUtils.pinCommand(command)
+        if (name.isNotBlank()) {
+            historyUtils.renameCommand(command, name)
+        }
+    }
+
     private fun appendToResults(text: String, isLink: Boolean = false) {
         val newPart = buildAnnotatedString {
             if (isLink) {
@@ -262,24 +271,26 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadSites(): List<String> {
         val context = getApplication<Application>()
         val prefs = context.getPreferences()
-        val defaultDomainLists = setOf("youtube", "googlevideo")
+        val defaultDomainLists = setOf("youtube", "googlevideo", "social")
         val selectedDomainLists = prefs.getStringSet("byedpi_proxytest_domain_lists", defaultDomainLists) ?: emptySet()
         val allDomains = mutableListOf<String>()
         for (domainList in selectedDomainLists) {
             val domains = when (domainList) {
                 "custom" -> prefs.getString("byedpi_proxytest_domains", "").orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
-                else -> context.assets.open("proxytest_$domainList.sites").bufferedReader().useLines { it.toList() }
+                else -> context.assets.open("proxytest_$domainList.sites").bufferedReader().useLines { lines ->
+                    lines.map { it.trim() }.filter { it.isNotEmpty() }.toList()
+                }
             }
             allDomains.addAll(domains)
         }
-        return allDomains.distinct()
+        return allDomains.distinct().filter { checkDomain(it) }
     }
 
     private fun loadCmds(): List<String> {
         val context = getApplication<Application>()
         val prefs = context.getPreferences()
         val selectedStrategyLists = prefs.getStringSet("byedpi_proxytest_strategy_lists", setOf("builtin")) ?: setOf("builtin")
-        val sniValue = prefs.getStringNotNull("byedpi_proxytest_sni", "google.com")
+        val sniValue = prefs.getStringNotNull("byedpi_proxytest_sni", "max.ru")
         
         val allCmds = mutableListOf<String>()
         for (strategyList in selectedStrategyLists) {

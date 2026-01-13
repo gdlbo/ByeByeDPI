@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.InetSocketAddress
@@ -57,25 +58,42 @@ class SiteCheckUtils(
 
         val formattedUrl = if (site.startsWith("http://") || site.startsWith("https://")) site
         else "https://$site"
+        
+        val httpUrl = formattedUrl.toHttpUrlOrNull()
+        if (httpUrl == null) {
+            Log.e("SiteChecker", "Invalid URL: $formattedUrl")
+            return@withContext 0
+        }
 
         repeat(requestsCount) { attempt ->
             Log.i("SiteChecker", "Attempt ${attempt + 1}/$requestsCount for $site")
 
             try {
-                val request = Request.Builder().url(formattedUrl).build()
+                val request = Request.Builder().url(httpUrl).build()
                 client.newCall(request).execute().use { response ->
-                    val declaredLength = response.body.contentLength()
-                    val actualLength = response.body.bytes().size.toLong()
+                    val body = response.body
+                    val declaredLength = body?.contentLength() ?: -1L
+                    // Use a small buffer to check if we can read anything, instead of loading everything
+                    val source = body?.source()
+                    val actualLength = if (source != null) {
+                        if (declaredLength > 0) {
+                            source.request(declaredLength)
+                            source.buffer.size
+                        } else {
+                            // If length is unknown, just try to read a bit
+                            source.request(1024)
+                            source.buffer.size
+                        }
+                    } else 0L
+                    
                     val responseCode = response.code
 
-                    if (declaredLength <= 0 || actualLength >= declaredLength) {
+                    if (response.isSuccessful || (declaredLength <= 0 || actualLength >= declaredLength)) {
                         Log.i("SiteChecker", "Response for $site: $responseCode, Declared: $declaredLength, Actual: $actualLength")
                         responseCount++
                     } else {
                         Log.w("SiteChecker", "Block detected for $site, Declared: $declaredLength, Actual: $actualLength")
                     }
-
-                    response.body.close()
                 }
             } catch (e: Exception) {
                 Log.e("SiteChecker", "Error accessing $site: ${e.message}")

@@ -280,6 +280,9 @@ class MainActivity : AppCompatActivity() {
                                 } else {
                                     navController.navigate("settings/ui")
                                 }
+                            },
+                            onOpenProfiles = {
+                                navController.navigate("profiles")
                             }
                         )
                     }
@@ -345,6 +348,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     composable("settings/test") {
                         TestSettingsScreen(onBack = { navController.popBackStack() })
+                    }
+                    composable("profiles") {
+                        ProfilesScreen(
+                            onBack = { navController.popBackStack() },
+                            onNavigateToTest = { navController.navigate("test") }
+                        )
                     }
                 }
             }

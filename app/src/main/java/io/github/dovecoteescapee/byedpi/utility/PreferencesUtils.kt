@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import io.github.dovecoteescapee.byedpi.data.Mode
+import io.github.dovecoteescapee.byedpi.data.Command
+import com.google.gson.Gson
 
 fun Context.getPreferences(): SharedPreferences =
     PreferenceManager.getDefaultSharedPreferences(this)
@@ -128,11 +130,30 @@ class AppPreferences(private val prefs: SharedPreferences) {
     var cmdArgs: String
         get() = prefs.getString("byedpi_cmd_args", "") ?: ""
         set(value) = prefs.edit().putString("byedpi_cmd_args", value).apply()
+        
+    var wifiProfile: String
+        get() = prefs.getString("byedpi_wifi_profile", "") ?: ""
+        set(value) = prefs.edit().putString("byedpi_wifi_profile", value).apply()
+        
+    var mobileProfile: String
+        get() = prefs.getString("byedpi_mobile_profile", "") ?: ""
+        set(value) = prefs.edit().putString("byedpi_mobile_profile", value).apply()
+
+    fun getProfileName(command: String): String? {
+        try {
+            val historyJson = prefs.getString("byedpi_command_history", null) ?: return null
+            val history = Gson().fromJson(historyJson, Array<Command>::class.java)
+            return history.find { it.text == command }?.name
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
 }
 
 class TestPreferences(private val prefs: SharedPreferences) {
     var delay: String
-        get() = prefs.getString("byedpi_proxytest_delay", "1") ?: "1"
+        get() = prefs.getString("byedpi_proxytest_delay", "6") ?: "6"
         set(value) = prefs.edit().putString("byedpi_proxytest_delay", value).apply()
 
     var requests: String
@@ -144,7 +165,7 @@ class TestPreferences(private val prefs: SharedPreferences) {
         set(value) = prefs.edit().putString("byedpi_proxytest_timeout", value).apply()
 
     var sni: String
-        get() = prefs.getString("byedpi_proxytest_sni", "google.com") ?: "google.com"
+        get() = prefs.getString("byedpi_proxytest_sni", "max.ru") ?: "max.ru"
         set(value) = prefs.edit().putString("byedpi_proxytest_sni", value).apply()
 
     var fullLog: Boolean
@@ -164,7 +185,7 @@ class TestPreferences(private val prefs: SharedPreferences) {
         set(value) = prefs.edit().putBoolean("byedpi_proxytest_showall", value).apply()
 
     var domainLists: Set<String>
-        get() = prefs.getStringSet("byedpi_proxytest_domain_lists", setOf("youtube", "googlevideo")) ?: setOf("youtube", "googlevideo")
+        get() = prefs.getStringSet("byedpi_proxytest_domain_lists", setOf("youtube", "googlevideo", "social")) ?: setOf("youtube", "googlevideo", "social")
         set(value) = prefs.edit().putStringSet("byedpi_proxytest_domain_lists", value).apply()
 
     var domains: String

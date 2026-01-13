@@ -318,14 +318,19 @@ class ByeDpiVpnService : LifecycleVpnService() {
         sendBroadcast(intent)
     }
 
-    private fun createNotification(): Notification =
-        createConnectionNotification(
+    private fun createNotification(): Notification {
+        val prefs = AppPreferences(getPreferences())
+        val profileName = prefs.getProfileName(prefs.cmdArgs)
+
+        return createConnectionNotification(
             this,
             NOTIFICATION_CHANNEL_ID,
             R.string.notification_title,
             R.string.vpn_notification_content,
             ByeDpiVpnService::class.java,
+            profileName
         )
+    }
 
     private fun createNotificationPause() {
         val notification = createPauseNotification(

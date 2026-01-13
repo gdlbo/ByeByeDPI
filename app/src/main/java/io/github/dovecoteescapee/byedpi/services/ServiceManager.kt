@@ -66,4 +66,8 @@ object ServiceManager {
             start(context, mode)
         }
     }
+
+    fun isVpnMode(): Boolean {
+        return appStatus.second == Mode.VPN
+    }
 }

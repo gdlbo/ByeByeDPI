@@ -14,14 +14,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.VpnKey
-import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +57,8 @@ fun MainScreen(
     onOpenSettings: () -> Unit,
     onSaveLogs: () -> Unit,
     onCloseApp: () -> Unit,
-    onOpenEditor: () -> Unit
+    onOpenEditor: () -> Unit,
+    onOpenProfiles: () -> Unit
 ) {
     val context = LocalContext.current
     val isTv = remember { context.isTv() }
@@ -63,6 +66,7 @@ fun MainScreen(
     val mode = viewModel.currentMode
     val preferredMode = viewModel.preferredMode
     val (ip, port) = viewModel.proxyAddress
+    val profileName = viewModel.currentProfileName
     
     var showMenu by remember { mutableStateOf(false) }
     val isRunning = status == AppStatus.Running
@@ -90,6 +94,14 @@ fun MainScreen(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.save_logs)) },
+                            leadingIcon = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
+                            onClick = {
+                                showMenu = false
+                                onSaveLogs()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.close_app)) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = null) },
@@ -127,13 +139,15 @@ fun MainScreen(
                         preferredMode = preferredMode,
                         ip = ip,
                         port = port,
+                        profileName = profileName,
                         isClickable = viewModel.isClickable,
                         isCmdEnabled = viewModel.isCmdEnabled,
                         onToggle = { viewModel.toggleService(onPrepareVpn) },
                         onSetMode = { viewModel.setMode(it) },
                         onOpenEditor = { viewModel.performActionIfStopped(onOpenEditor) },
                         onOpenSettings = { viewModel.performActionIfStopped(onOpenSettings) },
-                        onSaveLogs = onSaveLogs
+                        onSaveLogs = onSaveLogs,
+                        onOpenProfiles = { viewModel.performActionIfStopped(onOpenProfiles) }
                     )
                 } else {
                     MobileLayout(
@@ -144,13 +158,15 @@ fun MainScreen(
                         preferredMode = preferredMode,
                         ip = ip,
                         port = port,
+                        profileName = profileName,
                         isClickable = viewModel.isClickable,
                         isCmdEnabled = viewModel.isCmdEnabled,
                         onToggle = { viewModel.toggleService(onPrepareVpn) },
                         onSetMode = { viewModel.setMode(it) },
                         onOpenEditor = { viewModel.performActionIfStopped(onOpenEditor) },
                         onOpenSettings = { viewModel.performActionIfStopped(onOpenSettings) },
-                        onSaveLogs = onSaveLogs
+                        onSaveLogs = onSaveLogs,
+                        onOpenProfiles = { viewModel.performActionIfStopped(onOpenProfiles) }
                     )
                 }
             }
@@ -167,13 +183,15 @@ fun MobileLayout(
     preferredMode: Mode,
     ip: String,
     port: String,
+    profileName: String?,
     isClickable: Boolean,
     isCmdEnabled: Boolean,
     onToggle: () -> Unit,
     onSetMode: (Mode) -> Unit,
     onOpenEditor: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSaveLogs: () -> Unit
+    onSaveLogs: () -> Unit,
+    onOpenProfiles: () -> Unit
 ) {
     Column(
         modifier = Modifier.heightIn(min = minHeight),
@@ -187,7 +205,7 @@ fun MobileLayout(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Status Text
-        StatusText(status, isRunning, mode, preferredMode, ip, port)
+        StatusText(status, isRunning, mode, preferredMode, ip, port, profileName)
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -220,6 +238,12 @@ fun MobileLayout(
                 )
                 QuickActionButton(
                     modifier = Modifier.weight(1f).alpha(if (isRunning) 0.5f else 1f),
+                    icon = Icons.AutoMirrored.Filled.List,
+                    label = stringResource(R.string.profiles_title),
+                    onClick = onOpenProfiles
+                )
+                QuickActionButton(
+                    modifier = Modifier.weight(1f).alpha(if (isRunning) 0.5f else 1f),
                     icon = if (isCmdEnabled) Icons.Default.Terminal else Icons.Default.EditNote,
                     label = stringResource(R.string.editor),
                     onClick = onOpenEditor
@@ -229,12 +253,6 @@ fun MobileLayout(
                     icon = Icons.Default.Settings,
                     label = stringResource(R.string.settings),
                     onClick = onOpenSettings
-                )
-                QuickActionButton(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.BugReport,
-                    label = stringResource(R.string.save_logs),
-                    onClick = onSaveLogs
                 )
             }
         }
@@ -249,13 +267,15 @@ fun TvLayout(
     preferredMode: Mode,
     ip: String,
     port: String,
+    profileName: String?,
     isClickable: Boolean,
     isCmdEnabled: Boolean,
     onToggle: () -> Unit,
     onSetMode: (Mode) -> Unit,
     onOpenEditor: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSaveLogs: () -> Unit
+    onSaveLogs: () -> Unit,
+    onOpenProfiles: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -273,7 +293,7 @@ fun TvLayout(
         ) {
             StatusButton(isRunning, isClickable, onToggle)
             Spacer(modifier = Modifier.height(32.dp))
-            StatusText(status, isRunning, mode, preferredMode, ip, port)
+            StatusText(status, isRunning, mode, preferredMode, ip, port, profileName)
         }
 
         Column(
@@ -295,6 +315,12 @@ fun TvLayout(
                 modifier = buttonModifier.alpha(if (isRunning) 0.5f else 1f)
             )
             TvActionButton(
+                icon = Icons.AutoMirrored.Filled.List,
+                label = stringResource(R.string.profiles_title),
+                onClick = onOpenProfiles,
+                modifier = buttonModifier.alpha(if (isRunning) 0.5f else 1f)
+            )
+            TvActionButton(
                 icon = if (isCmdEnabled) Icons.Default.Terminal else Icons.Default.EditNote,
                 label = stringResource(R.string.editor),
                 onClick = onOpenEditor,
@@ -305,12 +331,6 @@ fun TvLayout(
                 label = stringResource(R.string.settings),
                 onClick = onOpenSettings,
                 modifier = buttonModifier.alpha(if (isRunning) 0.5f else 1f)
-            )
-            TvActionButton(
-                icon = Icons.Outlined.BugReport,
-                label = stringResource(R.string.save_logs),
-                onClick = onSaveLogs,
-                modifier = buttonModifier
             )
         }
     }
@@ -374,29 +394,42 @@ fun StatusText(
     mode: Mode,
     preferredMode: Mode,
     ip: String,
-    port: String
+    port: String,
+    profileName: String?
 ) {
     val statusTextRes = when (status) {
         AppStatus.Halted -> if (preferredMode == Mode.VPN) R.string.vpn_disconnected else R.string.proxy_down
         AppStatus.Running -> if (mode == Mode.VPN) R.string.vpn_connected else R.string.proxy_up
     }
 
-    Text(
-        text = stringResource(statusTextRes),
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-    
-    if (isRunning && mode == Mode.Proxy) {
-        Spacer(modifier = Modifier.height(8.dp))
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = stringResource(R.string.proxy_address, ip, port),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = stringResource(statusTextRes),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
+        
+        if (profileName != null) {
+            Text(
+                text = profileName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        
+        if (isRunning && mode == Mode.Proxy) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.proxy_address, ip, port),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 

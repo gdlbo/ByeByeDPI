@@ -182,4 +182,22 @@
     <string name="add">Добавить</string>
     <string name="empty">Пусто</string>
     <string name="byedpi_proxy_port_setting_hint" translatable="false">(0-65535)</string>
+    <string name="profiles_title">Профили</string>
+    <string name="profiles_add">Добавить профиль</string>
+    <string name="profiles_edit">Редактировать профиль</string>
+    <string name="profiles_delete_confirm">Удалить профиль?</string>
+    <string name="profiles_delete_message">Вы уверены, что хотите удалить профиль \"%1$s\"?</string>
+    <string name="profiles_name">Название</string>
+    <string name="profiles_command">Команда</string>
+    <string name="profiles_unnamed">Без названия</string>
+    <string name="apply">Применить</string>
+    <string name="edit">Редактировать</string>
+    <string name="delete">Удалить</string>
+    <string name="profiles_auto_switch">Автопереключение</string>
+    <string name="profiles_wifi">Wi-Fi</string>
+    <string name="profiles_mobile">Мобильный интернет</string>
+    <string name="profiles_none">Не выбрано</string>
+    <string name="profiles_list">Список профилей</string>
+    <string name="profiles_empty">У вас пока нет профилей. Вы можете добавить их вручную или найти рабочую стратегию в разделе тестирования.</string>
+    <string name="restarting_service">Перезапуск сервиса...</string>
 </resources>
