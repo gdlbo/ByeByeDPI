@@ -17,27 +17,77 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import io.github.dovecoteescapee.byedpi.R
-import io.github.dovecoteescapee.byedpi.data.*
+import io.github.dovecoteescapee.byedpi.data.ACTION_TOGGLE
+import io.github.dovecoteescapee.byedpi.data.AppStatus
+import io.github.dovecoteescapee.byedpi.data.FAILED_BROADCAST
+import io.github.dovecoteescapee.byedpi.data.Mode
+import io.github.dovecoteescapee.byedpi.data.SENDER
+import io.github.dovecoteescapee.byedpi.data.STARTED_BROADCAST
+import io.github.dovecoteescapee.byedpi.data.STOPPED_BROADCAST
+import io.github.dovecoteescapee.byedpi.data.Sender
+import io.github.dovecoteescapee.byedpi.data.ThemeManager
 import io.github.dovecoteescapee.byedpi.services.ServiceManager
 import io.github.dovecoteescapee.byedpi.services.appStatus
-import io.github.dovecoteescapee.byedpi.ui.*
+import io.github.dovecoteescapee.byedpi.ui.AppSelectionScreen
+import io.github.dovecoteescapee.byedpi.ui.CmdSettingsScreen
+import io.github.dovecoteescapee.byedpi.ui.MainScreen
+import io.github.dovecoteescapee.byedpi.ui.SettingsScreen
+import io.github.dovecoteescapee.byedpi.ui.TestScreen
+import io.github.dovecoteescapee.byedpi.ui.TestSettingsScreen
+import io.github.dovecoteescapee.byedpi.ui.UISettingsScreen
 import io.github.dovecoteescapee.byedpi.ui.theme.TrackerTheme
-import io.github.dovecoteescapee.byedpi.utility.*
+import io.github.dovecoteescapee.byedpi.utility.LogUtils
+import io.github.dovecoteescapee.byedpi.utility.SettingsUtils
+import io.github.dovecoteescapee.byedpi.utility.ShortcutUtils
+import io.github.dovecoteescapee.byedpi.utility.getPreferences
+import io.github.dovecoteescapee.byedpi.utility.getStringNotNull
+import io.github.dovecoteescapee.byedpi.utility.isBatteryOptimizationEnabled
+import io.github.dovecoteescapee.byedpi.utility.isTv
+import io.github.dovecoteescapee.byedpi.utility.mode
+import io.github.dovecoteescapee.byedpi.utility.toReadableDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
@@ -170,9 +220,14 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val themeManager = remember { ThemeManager(this) }
             TrackerTheme(themeManager = themeManager) {
-                val navController = rememberNavController()
                 val context = LocalContext.current
                 val isTv = remember { context.isTv() }
+
+                val navigationState = rememberNavigationState(
+                    startRoute = Home,
+                    topLevelRoutes = setOf(Home)
+                )
+                val navigator = remember { Navigator(navigationState) }
 
                 var showBatteryOptimizationDialog by remember { mutableStateOf(false) }
                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -260,32 +315,42 @@ class MainActivity : AppCompatActivity() {
 
                 LaunchedEffect(intent?.getStringExtra("navigate_to")) {
                     intent?.getStringExtra("navigate_to")?.let {
-                        navController.navigate(it)
+                        val route = when (it) {
+                            "home" -> Home
+                            "settings" -> Settings
+                            "settings/cmd" -> SettingsCmd
+                            "settings/ui" -> SettingsUI
+                            "settings/apps" -> SettingsApps
+                            "test" -> Test
+                            "settings/test" -> SettingsTest
+                            else -> null
+                        }
+                        route?.let { r -> navigator.navigate(r) }
                         intent?.removeExtra("navigate_to")
                     }
                 }
 
-                NavHost(navController = navController, startDestination = "home") {
-                    composable("home") {
+                val entryProvider = entryProvider<NavKey> {
+                    entry<Home> {
                         MainScreen(
                             onPrepareVpn = { vpnRegister.launch(it) },
                             onOpenSettings = {
-                                navController.navigate("settings")
+                                navigator.navigate(Settings)
                             },
                             onSaveLogs = { saveLogs() },
                             onCloseApp = { closeApp() },
                             onOpenEditor = {
                                 if (getPreferences().getBoolean("byedpi_enable_cmd_settings", false)) {
-                                    navController.navigate("settings/cmd")
+                                    navigator.navigate(SettingsCmd)
                                 } else {
-                                    navController.navigate("settings/ui")
+                                    navigator.navigate(SettingsUI)
                                 }
                             }
                         )
                     }
-                    composable("settings") {
+                    entry<io.github.dovecoteescapee.byedpi.activities.Settings> {
                         SettingsScreen(
-                            onBack = { navController.popBackStack() },
+                            onBack = { navigator.goBack() },
                             onReset = {
                                 getPreferences().edit { clear() }
                                 SettingsUtils.setTheme("system")
@@ -299,16 +364,16 @@ class MainActivity : AppCompatActivity() {
                                 importSettingsLauncher.launch(arrayOf("application/json"))
                             },
                             onNavigateToTest = {
-                                navController.navigate("test")
+                                navigator.navigate(Test)
                             },
                             onNavigateToAppSelection = {
-                                navController.navigate("settings/apps")
+                                navigator.navigate(SettingsApps)
                             },
                             onNavigateToCmdSettings = {
-                                navController.navigate("settings/cmd")
+                                navigator.navigate(SettingsCmd)
                             },
                             onNavigateToUISettings = {
-                                navController.navigate("settings/ui")
+                                navigator.navigate(SettingsUI)
                             },
                             onOpenTelegram = {
                                 openUrl("https://t.me/byedpi_chat")
@@ -324,29 +389,61 @@ class MainActivity : AppCompatActivity() {
                             }
                         )
                     }
-                    composable("settings/cmd") {
-                        CmdSettingsScreen(onBack = { navController.popBackStack() })
+                    entry<SettingsCmd> {
+                        CmdSettingsScreen(onBack = { navigator.goBack() })
                     }
-                    composable("settings/ui") {
-                        UISettingsScreen(onBack = { navController.popBackStack() })
+                    entry<SettingsUI> {
+                        UISettingsScreen(onBack = { navigator.goBack() })
                     }
-                    composable("settings/apps") {
-                        AppSelectionScreen(onBack = { navController.popBackStack() })
+                    entry<SettingsApps> {
+                        AppSelectionScreen(onBack = { navigator.goBack() })
                     }
-                    composable("test") {
+                    entry<Test> {
                         TestScreen(
                             onBack = {
-                                navController.popBackStack()
+                                navigator.goBack()
                             },
                             onOpenSettings = {
-                                navController.navigate("settings/test")
+                                navigator.navigate(SettingsTest)
                             }
                         )
                     }
-                    composable("settings/test") {
-                        TestSettingsScreen(onBack = { navController.popBackStack() })
+                    entry<SettingsTest> {
+                        TestSettingsScreen(onBack = { navigator.goBack() })
                     }
                 }
+
+                val offsetSpec = tween<IntOffset>(
+                        durationMillis = 400,
+                        easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+                    )
+                val springSpec = remember { spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 0.1f) }
+
+                NavDisplay(
+                    entries = navigationState.toEntries(entryProvider),
+                    onBack = { navigator.goBack() },
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        slideIntoContainer(
+                            AnimatedContentTransitionScope.SlideDirection.Start,
+                            animationSpec = offsetSpec
+                        ) + fadeIn(animationSpec = springSpec) togetherWith
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = offsetSpec
+                            ) + fadeOut(animationSpec = springSpec)
+                    },
+                    popTransitionSpec = {
+                        slideIntoContainer(
+                            AnimatedContentTransitionScope.SlideDirection.End,
+                            animationSpec = offsetSpec
+                        ) + fadeIn(animationSpec = springSpec) togetherWith
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = offsetSpec
+                            ) + fadeOut(animationSpec = springSpec)
+                    }
+                )
             }
         }
     }
