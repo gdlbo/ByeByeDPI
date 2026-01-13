@@ -200,4 +200,12 @@
     <string name="profiles_list">Список профилей</string>
     <string name="profiles_empty">У вас пока нет профилей. Вы можете добавить их вручную или найти рабочую стратегию в разделе тестирования.</string>
     <string name="restarting_service">Перезапуск сервиса...</string>
+    <string name="private_dns">Персональный DNS</string>
+    <string name="private_dns_off">Отключен</string>
+    <string name="private_dns_auto">Автоматический</string>
+    <string name="private_dns_provider">Имя хоста поставщика персонального DNS</string>
+    <string name="private_dns_suggest_cloudflare">Рекомендуется использовать Cloudflare DNS для работы ByeByeDPI</string>
+    <string name="private_dns_how_to_use">Как включить: Настройки -> Сеть и интернет -> Персональный DNS сервер -> Имя хоста поставщика персонального DNS -> Введите 1dot1dot1dot1.cloudflare-dns.com</string>
+    <string name="copy_cloudflare_dns">Копировать DNS</string>
+    <string name="copied_to_clipboard">Скопировано в буфер обмена</string>
 </resources>

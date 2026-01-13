@@ -1,6 +1,13 @@
 package io.github.dovecoteescapee.byedpi.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,6 +58,7 @@ fun SettingsScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshBatteryOptimizationStatus()
         viewModel.refreshStorageAccessStatus()
+        viewModel.refreshPrivateDnsStatus()
     }
 
     Scaffold(
@@ -103,6 +111,59 @@ fun SettingsScreen(
             contentPadding = PaddingValues(if (isTv) 48.dp else 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                SettingsCard(title = stringResource(R.string.private_dns)) {
+                    val privateDnsMode = viewModel.privateDnsMode ?: "off"
+                    val privateDnsSummary = when (privateDnsMode) {
+                        "off" -> stringResource(R.string.private_dns_off)
+                        "opportunistic" -> stringResource(R.string.private_dns_auto)
+                        "hostname" -> viewModel.privateDnsSpecifier ?: stringResource(R.string.private_dns_provider)
+                        else -> privateDnsMode
+                    }
+
+                    PreferenceItem(
+                        title = stringResource(R.string.private_dns),
+                        summary = privateDnsSummary,
+                        icon = Icons.Default.VpnLock
+                    )
+
+                    if (privateDnsMode == "off" || privateDnsMode == "opportunistic") {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Text(
+                                text = stringResource(R.string.private_dns_suggest_cloudflare),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.private_dns_how_to_use),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clip = ClipData.newPlainText("Cloudflare DNS", "1dot1dot1dot1.cloudflare-dns.com")
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.copy_cloudflare_dns))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 SettingsCard(title = stringResource(R.string.general_category)) {
                     val modes = stringArrayResource(R.array.byedpi_modes)

@@ -48,6 +48,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         private set
     var hasStorageAccess by mutableStateOf(application.hasStorageAccess())
         private set
+    var privateDnsMode by mutableStateOf(application.getPrivateDnsMode())
+        private set
+    var privateDnsSpecifier by mutableStateOf(application.getPrivateDnsSpecifier())
+        private set
 
     val isProxyVisible: Boolean
         get() {
@@ -143,5 +147,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshStorageAccessStatus() {
         hasStorageAccess = getApplication<Application>().hasStorageAccess()
+    }
+
+    fun refreshPrivateDnsStatus() {
+        privateDnsMode = getApplication<Application>().getPrivateDnsMode()
+        privateDnsSpecifier = getApplication<Application>().getPrivateDnsSpecifier()
     }
 }
