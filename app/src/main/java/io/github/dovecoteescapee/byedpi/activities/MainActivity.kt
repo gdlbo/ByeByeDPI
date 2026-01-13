@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                                 navController.navigate("settings/ui")
                             },
                             onOpenTelegram = {
-                                openUrl("https://t.me/byedpi_chat")
+                                openUrl("https://t.me/gdlbo")
                             },
                             onOpenSourceCode = {
                                 openUrl("https://github.com/gdlbo/ByeByeDPI")

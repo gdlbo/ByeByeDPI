@@ -147,6 +147,7 @@
     <string name="test_delay">Komutlar arasındaki gecikme</string>
     <string name="test_requests">Domain isteklerinin sayısı</string>
     <string name="test_timeout">Etki alanı yanıt zaman aşımı</string>
+    <string name="test_concurrent_requests">Eşzamanlı kontrol sayısı</string>
     <string name="test_settings_autosort">Otomatik sıralama</string>
     <string name="test_settings_showall">Tüm sonuçları göster</string>
     <string name="clear_selection">Seçimi temizle</string>
