@@ -4,6 +4,8 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
@@ -32,18 +34,22 @@ class SiteCheckUtils(
         sites: List<String>,
         requestsCount: Int,
         requestTimeout: Long,
+        concurrentRequests: Int = 20,
         fullLog: Boolean,
         onSiteChecked: ((String, Int, Int) -> Unit)? = null
     ): List<Pair<String, Int>> {
+        val semaphore = Semaphore(concurrentRequests)
         return withContext(Dispatchers.IO) {
             val client = createClient(requestTimeout)
             sites.map { site ->
                 async {
-                    val successCount = checkSiteAccess(client, site, requestsCount)
-                    if (fullLog) {
-                        onSiteChecked?.invoke(site, successCount, requestsCount)
+                    semaphore.withPermit {
+                        val successCount = checkSiteAccess(client, site, requestsCount)
+                        if (fullLog) {
+                            onSiteChecked?.invoke(site, successCount, requestsCount)
+                        }
+                        site to successCount
                     }
-                    site to successCount
                 }
             }.awaitAll()
         }

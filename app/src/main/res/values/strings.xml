@@ -147,6 +147,7 @@
     <string name="test_delay">Ожидание между проверками</string>
     <string name="test_requests">Количество запросов к домену</string>
     <string name="test_timeout">Таймаут ответа домена</string>
+    <string name="test_concurrent_requests">Количество одновременных проверок</string>
     <string name="test_settings_autosort">Автоматическая сортировка</string>
     <string name="test_settings_showall">Показывать все результаты</string>
     <string name="clear_selection">Очистить выбор</string>

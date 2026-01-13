@@ -83,6 +83,14 @@ fun TestSettingsScreen(
                     )
 
                     EditTextPreference(
+                        title = stringResource(R.string.test_concurrent_requests),
+                        value = viewModel.concurrentRequests,
+                        onValueChange = { viewModel.updateConcurrentRequests(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        icon = Icons.Default.Speed
+                    )
+
+                    EditTextPreference(
                         title = stringResource(R.string.test_settings_sni),
                         value = viewModel.sni,
                         onValueChange = { viewModel.updateSni(it) },

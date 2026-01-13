@@ -113,6 +113,7 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
             val delaySec = prefs.getIntStringNotNull("byedpi_proxytest_delay", 6)
             val requestsCount = prefs.getIntStringNotNull("byedpi_proxytest_requests", 1)
             val requestTimeout = prefs.getLongStringNotNull("byedpi_proxytest_timeout", 5)
+            val concurrentRequests = prefs.getIntStringNotNull("byedpi_proxytest_concurrent_requests", 20)
 
             val ip = prefs.getStringNotNull("byedpi_proxy_ip", "127.0.0.1")
             val port = prefs.getIntStringNotNull("byedpi_proxy_port", 1080)
@@ -149,6 +150,7 @@ class TestViewModel(application: Application) : AndroidViewModel(application) {
                     sites = sites,
                     requestsCount = requestsCount,
                     requestTimeout = requestTimeout,
+                    concurrentRequests = concurrentRequests,
                     fullLog = fullLog,
                     onSiteChecked = { site, successCount, countRequests ->
                         viewModelScope.launch(Dispatchers.Main) {

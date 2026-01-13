@@ -199,6 +199,10 @@ class TestPreferences(private val prefs: SharedPreferences) {
     var commands: String
         get() = prefs.getString("byedpi_proxytest_commands", "") ?: ""
         set(value) = prefs.edit().putString("byedpi_proxytest_commands", value).apply()
+
+    var concurrentRequests: String
+        get() = prefs.getString("byedpi_proxytest_concurrent_requests", "20") ?: "20"
+        set(value) = prefs.edit().putString("byedpi_proxytest_concurrent_requests", value).apply()
 }
 
 class UIPreferences(private val prefs: SharedPreferences) {

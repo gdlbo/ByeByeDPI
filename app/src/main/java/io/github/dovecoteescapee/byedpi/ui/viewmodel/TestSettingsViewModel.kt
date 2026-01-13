@@ -47,6 +47,9 @@ class TestSettingsViewModel(application: Application) : AndroidViewModel(applica
     var commandsList by mutableStateOf(testPrefs.commands.split("\n").filter { it.isNotBlank() })
         private set
 
+    var concurrentRequests by mutableStateOf(testPrefs.concurrentRequests)
+        private set
+
     fun updateDelay(newValue: String) {
         testPrefs.delay = newValue
         delay = newValue
@@ -116,5 +119,10 @@ class TestSettingsViewModel(application: Application) : AndroidViewModel(applica
     fun updateCommandsList(newList: List<String>) {
         commandsList = newList
         testPrefs.commands = newList.joinToString("\n")
+    }
+
+    fun updateConcurrentRequests(newValue: String) {
+        testPrefs.concurrentRequests = newValue
+        concurrentRequests = newValue
     }
 }
