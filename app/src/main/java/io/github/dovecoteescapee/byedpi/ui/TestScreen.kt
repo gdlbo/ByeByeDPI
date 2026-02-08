@@ -5,6 +5,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -59,6 +60,10 @@ fun TestScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isTablet = configuration.screenWidthDp >= 600
     val useSplitLayout = isLandscape || isTablet
+    val colorFloatingActionButton by animateColorAsState(
+        if (viewModel.isTestingState) MaterialTheme.colorScheme.errorContainer
+        else MaterialTheme.colorScheme.primaryContainer)
+
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collectLatest { messageResId ->
@@ -114,7 +119,7 @@ fun TestScreen(
                     onClick = {
                         if (viewModel.isTestingState) viewModel.stopTesting() else viewModel.startTesting()
                     },
-                    containerColor = if (viewModel.isTestingState) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = colorFloatingActionButton,
                     contentColor = if (viewModel.isTestingState) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                     icon = {
                         Icon(

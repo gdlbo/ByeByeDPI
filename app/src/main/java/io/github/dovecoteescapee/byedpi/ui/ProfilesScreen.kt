@@ -104,8 +104,14 @@ fun ProfilesScreen(
                         profileName = wifiProfileName,
                         icon = Icons.Default.Wifi,
                         onClick = {
-                            showProfileSelectionDialog =
-                                context.getString(R.string.profiles_wifi) to { viewModel.updateWifiProfile(it) }
+                            if (viewModel.profiles.isNotEmpty()) {
+                                showProfileSelectionDialog =
+                                    context.getString(R.string.profiles_wifi) to {
+                                        viewModel.updateWifiProfile(
+                                            it
+                                        )
+                                    }
+                            }
                         },
                         onClear = if (viewModel.wifiProfile.isNotEmpty()) {
                             { viewModel.updateWifiProfile("") }
@@ -124,8 +130,14 @@ fun ProfilesScreen(
                         profileName = mobileProfileName,
                         icon = Icons.Default.SignalCellularAlt,
                         onClick = {
-                            showProfileSelectionDialog =
-                                context.getString(R.string.profiles_mobile) to { viewModel.updateMobileProfile(it) }
+                            if (viewModel.profiles.isNotEmpty()) {
+                                showProfileSelectionDialog =
+                                    context.getString(R.string.profiles_mobile) to {
+                                        viewModel.updateMobileProfile(
+                                            it
+                                        )
+                                    }
+                            }
                         },
                         onClear = if (viewModel.mobileProfile.isNotEmpty()) {
                             { viewModel.updateMobileProfile("") }
@@ -187,7 +199,7 @@ fun ProfilesScreen(
             title = stringResource(R.string.profiles_add),
             onDismiss = { showAddDialog = false },
             onConfirm = { name, command ->
-                viewModel.addProfile(name, command)
+                viewModel.addProfile(name.trim(), command.trim())
                 showAddDialog = false
             }
         )
@@ -200,7 +212,7 @@ fun ProfilesScreen(
             initialCommand = profile.text,
             onDismiss = { showEditDialog = null },
             onConfirm = { name, command ->
-                viewModel.updateProfile(profile, name, command)
+                viewModel.updateProfile(profile, name.trim(), command.trim())
                 showEditDialog = null
             }
         )
@@ -265,7 +277,7 @@ fun ProfilesScreen(
                                 color = MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 ListItem(
-                                    headlineContent = { Text(profile.name ?: stringResource(R.string.profiles_unnamed)) },
+                                    headlineContent = { Text(profile.name) },
                                     supportingContent = { Text(profile.text, maxLines = 1) },
                                     colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                 )
@@ -294,23 +306,6 @@ fun ProfilesScreen(
                         modifier = Modifier.padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 16.dp)
                     )
                     LazyColumn {
-                        item {
-                            Surface(
-                                onClick = {
-                                    onSelect("")
-                                    showProfileSelectionDialog = null
-                                },
-                                shape = MaterialTheme.shapes.medium,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
-                                color = MaterialTheme.colorScheme.errorContainer
-                            ) {
-                                ListItem(
-                                    headlineContent = { Text(stringResource(R.string.clear_selection)) },
-                                    leadingContent = { Icon(Icons.Default.Close, contentDescription = null) },
-                                    colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                                )
-                            }
-                        }
                         items(viewModel.profiles) { profile ->
                             Surface(
                                 onClick = {
@@ -322,7 +317,7 @@ fun ProfilesScreen(
                                 color = MaterialTheme.colorScheme.surface
                             ) {
                                 ListItem(
-                                    headlineContent = { Text(profile.name ?: stringResource(R.string.profiles_unnamed)) },
+                                    headlineContent = { Text(profile.name) },
                                     supportingContent = { Text(profile.text, maxLines = 1) }
                                 )
                             }
@@ -336,12 +331,16 @@ fun ProfilesScreen(
 
 @Composable
 fun AutoSwitchCard(
+    viewModel: ProfilesViewModel = viewModel(),
     title: String,
     profileName: String,
     icon: ImageVector,
     onClick: () -> Unit,
     onClear: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val isTv = remember { context.isTv() }
+
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -375,13 +374,19 @@ fun AutoSwitchCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (onClear != null) {
+            if (onClear != null && !isTv) {
                 IconButton(onClick = onClear) {
                     Icon(
                         Icons.Default.Close,
                         contentDescription = stringResource(R.string.clear_selection)
                     )
                 }
+            }
+            if (isTv && viewModel.profiles.isNotEmpty()) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = null
+                )
             }
         }
     }
@@ -410,7 +415,7 @@ fun ProfileItem(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = profile.name ?: stringResource(R.string.profiles_unnamed),
+                        text = profile.name,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -483,7 +488,7 @@ fun ProfileDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(name, command) },
-                enabled = command.isNotBlank()
+                enabled = name.isNotBlank() && command.isNotBlank()
             ) {
                 Text(stringResource(android.R.string.ok))
             }

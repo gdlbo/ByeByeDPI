@@ -13,16 +13,24 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -42,7 +50,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     companion object {
         private val TAG: String = MainActivity::class.java.simpleName
@@ -265,8 +273,42 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                NavHost(navController = navController, startDestination = "home") {
-                    composable("home") {
+                val offsetSpec = tween<IntOffset>(
+                    durationMillis = 400,
+                    easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+                )
+                val springSpec = remember { spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 0.1f) }
+
+                NavHost(
+                    navController = navController, startDestination = "home",
+                    enterTransition = {
+                        slideIntoContainer(
+                            AnimatedContentTransitionScope.SlideDirection.Start,
+                            animationSpec = offsetSpec
+                        ) + fadeIn(animationSpec = springSpec)
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = offsetSpec
+                    ) + fadeOut(animationSpec = springSpec)
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = offsetSpec
+                    ) + fadeIn(animationSpec = springSpec)  },
+                    popExitTransition = {
+                        slideOutOfContainer(
+                            AnimatedContentTransitionScope.SlideDirection.End,
+                            animationSpec = offsetSpec
+                        ) + fadeOut(animationSpec = springSpec)
+                    }
+                ) {
+                    composable("home",
+                        exitTransition = { fadeOut(animationSpec = springSpec) },
+                        popEnterTransition = { fadeIn(animationSpec = springSpec) }
+                    ) {
                         MainScreen(
                             onPrepareVpn = { vpnRegister.launch(it) },
                             onOpenSettings = {
@@ -301,7 +343,7 @@ class MainActivity : AppCompatActivity() {
                             },
                             onImport = {
                                 importSettingsLauncher.launch(arrayOf("application/json"))
-                                navController.navigate("home")
+                                navController.popBackStack()
                             },
                             onNavigateToTest = {
                                 navController.navigate("test")
